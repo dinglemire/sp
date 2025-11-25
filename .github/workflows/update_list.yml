@@ -1,0 +1,39 @@
+name: Update Page Index
+on:
+  push:
+    paths:
+      - 'saved_pages/**' # Only runs when you add files here
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows the bot to save the JSON file
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate File List
+        run: |
+          # Find all html files in saved_pages and formatting as JSON
+          # This command handles spaces in filenames correctly
+          echo "[" > pages.json
+          first=true
+          find saved_pages -name "*.html" -print0 | while IFS= read -r -d '' file; do
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo "," >> pages.json
+            fi
+            # Clean up filename for display
+            filename=$(basename "$file")
+            # Create JSON entry
+            echo "  { \"path\": \"$file\", \"name\": \"$filename\" }" >> pages.json
+          done
+          echo "]" >> pages.json
+
+      - name: Commit and Push if changed
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add pages.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update pages.json" && git push)

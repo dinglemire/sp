@@ -1,8 +1,6 @@
 name: Update Page Index
 on:
-  push:
-    paths:
-      - 'saved_pages/**' # Only runs when you add files here
+  workflow_dispatch:  # <--- This creates the manual button
 
 jobs:
   build:

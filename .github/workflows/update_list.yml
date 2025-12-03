@@ -1,10 +1,10 @@
 name: Update Page Index
 
 on:
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
   push:
     paths:
-      - 'saved_pages/**.html' # Triggers only when HTML files in this folder change
+      - 'saved_pages/**.html'
 
 jobs:
   build:
@@ -14,14 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # <--- IMPORTANT: Required to get file history/dates
+          fetch-depth: 0  # <--- CRITICAL: This allows us to check the history (dates)
 
       - name: Generate File List
         run: |
           echo "[" > pages.json
           first=true
           
-          # Find all HTML files in saved_pages
+          # Find html files
           find saved_pages -name "*.html" -print0 | while IFS= read -r -d '' file; do
             if [ "$first" = true ]; then
               first=false
@@ -31,23 +31,23 @@ jobs:
             
             filename=$(basename "$file")
             
-            # Get the last commit date for this file (Format: YYYY-MM-DD HH:MM:SS)
+            # GET THE REAL UPLOAD DATE FROM GIT HISTORY
+            # %ai = Author date, ISO 8601 format
             filedate=$(git log -1 --format="%ai" -- "$file")
             
-            # If file is new and has no git history yet, use current time
+            # Fallback if file is brand new and not in history yet
             if [ -z "$filedate" ]; then
                 filedate=$(date '+%Y-%m-%d %H:%M:%S')
             fi
 
-            # Append to JSON: path, name, date
+            # Save to JSON
             echo "  { \"path\": \"$file\", \"name\": \"$filename\", \"date\": \"$filedate\" }" >> pages.json
           done
           echo "]" >> pages.json
 
-      - name: Commit and Push if changed
+      - name: Commit and Push
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
           git add pages.json
-          # Check for changes and commit. [skip ci] prevents infinite loops.
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update index with dates [skip ci]" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update index with real git dates [skip ci]" && git push)

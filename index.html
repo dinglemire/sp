@@ -4,102 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Archive</title>
-    <style>
-        :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --border: #30363d;
-            --accent: #238636;
-            --text: #c9d1d9;
-            --text-dim: #8b949e;
-            --input-bg: #0d1117;
-        }
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h1 { border-bottom: 2px solid var(--border); padding-bottom: 10px; width: 100%; max-width: 1000px; text-align: center; }
-        
-        /* Controls Container (Search + Sort) */
-        .controls {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            max-width: 800px;
-            margin-bottom: 30px;
-        }
-
-        /* Inputs Styling */
-        #search, #sortSelect {
-            background: var(--input-bg);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 16px;
-            outline: none;
-        }
-        
-        #search { flex-grow: 1; } /* Search takes available space */
-        #sortSelect { width: 180px; cursor: pointer; } /* Fixed width for sort */
-
-        #search:focus, #sortSelect:focus { border-color: var(--accent); }
-
-        /* Grid Layout */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        /* Card Style */
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            text-decoration: none;
-            color: var(--text);
-            transition: transform 0.2s, border-color 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .card:hover {
-            border-color: var(--accent);
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        .filename {
-            font-weight: 600;
-            font-size: 1.1em;
-            word-break: break-word;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-        .meta {
-            margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .date-badge {
-            background: #21262d;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        .loading { margin-top: 50px; color: var(--text-dim); font-style: italic;}
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -109,8 +14,8 @@
         <input type="text" id="search" placeholder="🔍 Search pages..." onkeyup="filterPages()">
         
         <select id="sortSelect" onchange="sortAndRender()">
-            <option value="newest">📅 Newest First</option>
-            <option value="oldest">📅 Oldest First</option>
+            <option value="newest">📅 Uploaded: Newest</option>
+            <option value="oldest">📅 Uploaded: Oldest</option>
             <option value="az">🔤 Name (A-Z)</option>
         </select>
     </div>
@@ -124,37 +29,38 @@
 
         async function loadPages() {
             try {
+                // Fetch JSON with timestamp to avoid caching
                 const response = await fetch('pages.json?t=' + new Date().getTime());
                 if (!response.ok) throw new Error("JSON not found");
                 
                 allPages = await response.json();
                 
-                // Initial render (uses default sort option 'newest')
+                // Initial Sort
                 sortAndRender();
             } catch (error) {
                 document.getElementById('gallery').innerHTML = 
-                    `<div class="loading" style="color: #ff7b72">Failed to load database. Check GitHub Actions.</div>`;
+                    `<div class="error">Failed to load database.</div>`;
             }
         }
 
         function sortAndRender() {
             const sortMode = document.getElementById('sortSelect').value;
 
-            // Sort the main array based on selection
             allPages.sort((a, b) => {
+                // Parse the Git date strings
                 const dateA = new Date(a.date || 0);
                 const dateB = new Date(b.date || 0);
 
                 if (sortMode === 'oldest') {
-                    return dateA - dateB; // Ascending Date
+                    return dateA - dateB;
                 } else if (sortMode === 'az') {
-                    return a.name.localeCompare(b.name); // Alphabetical
+                    return a.name.localeCompare(b.name);
                 } else {
-                    return dateB - dateA; // Default: Newest First (Descending)
+                    // Default: Newest First
+                    return dateB - dateA;
                 }
             });
 
-            // After sorting, re-apply search filter (which triggers render)
             filterPages();
         }
 
@@ -168,13 +74,19 @@
             }
 
             items.forEach(item => {
-                const displayName = item.name
-                    .replace('.html', '')
-                    .replace(/_/g, ' ')
-                    .replace(/-/g, ' ');
+                // Clean up name for display (remove .html)
+                const displayName = item.name.replace('.html', '');
                 
-                const dateObj = new Date(item.date);
-                const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown';
+                // Format the Git Date
+                let dateStr = "Unknown";
+                if (item.date) {
+                    const dateObj = new Date(item.date);
+                    if (!isNaN(dateObj)) {
+                        dateStr = dateObj.toLocaleDateString('en-GB', { 
+                            year: 'numeric', month: 'short', day: 'numeric' 
+                        });
+                    }
+                }
 
                 const link = document.createElement('a');
                 link.className = 'card';
@@ -194,7 +106,6 @@
 
         function filterPages() {
             const query = document.getElementById('search').value.toLowerCase();
-            // Filter based on the ALREADY SORTED allPages array
             const filtered = allPages.filter(p => p.name.toLowerCase().includes(query));
             render(filtered);
         }

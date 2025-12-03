@@ -9,9 +9,10 @@
             --bg: #0d1117;
             --card: #161b22;
             --border: #30363d;
-            --accent: #238636; /* GitHub Green */
+            --accent: #238636;
             --text: #c9d1d9;
             --text-dim: #8b949e;
+            --input-bg: #0d1117;
         }
         body {
             background-color: var(--bg);
@@ -25,20 +26,30 @@
         }
         h1 { border-bottom: 2px solid var(--border); padding-bottom: 10px; width: 100%; max-width: 1000px; text-align: center; }
         
-        /* Search Box */
-        #search {
-            background: var(--card);
+        /* Controls Container (Search + Sort) */
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 30px;
+        }
+
+        /* Inputs Styling */
+        #search, #sortSelect {
+            background: var(--input-bg);
             border: 1px solid var(--border);
             color: white;
             padding: 12px;
-            width: 100%;
-            max-width: 600px;
             border-radius: 6px;
-            margin-bottom: 30px;
             font-size: 16px;
             outline: none;
         }
-        #search:focus { border-color: var(--accent); }
+        
+        #search { flex-grow: 1; } /* Search takes available space */
+        #sortSelect { width: 180px; cursor: pointer; } /* Fixed width for sort */
+
+        #search:focus, #sortSelect:focus { border-color: var(--accent); }
 
         /* Grid Layout */
         .grid {
@@ -88,14 +99,21 @@
             border-radius: 4px;
         }
         .loading { margin-top: 50px; color: var(--text-dim); font-style: italic;}
-        .error { color: #ff7b72; margin-top: 50px; text-align: center; }
     </style>
 </head>
 <body>
 
     <h1>📚 Personal Web Archive</h1>
     
-    <input type="text" id="search" placeholder="🔍 Search pages..." onkeyup="filterPages()">
+    <div class="controls">
+        <input type="text" id="search" placeholder="🔍 Search pages..." onkeyup="filterPages()">
+        
+        <select id="sortSelect" onchange="sortAndRender()">
+            <option value="newest">📅 Newest First</option>
+            <option value="oldest">📅 Oldest First</option>
+            <option value="az">🔤 Name (A-Z)</option>
+        </select>
+    </div>
 
     <div id="gallery" class="grid">
         <div class="loading">Loading library...</div>
@@ -106,25 +124,38 @@
 
         async function loadPages() {
             try {
-                // Add timestamp to prevent browser caching of the JSON file
                 const response = await fetch('pages.json?t=' + new Date().getTime());
                 if (!response.ok) throw new Error("JSON not found");
                 
                 allPages = await response.json();
                 
-                // Sort by date (Newest first)
-                // If date is missing, it falls back to 0 (very old date)
-                allPages.sort((a, b) => {
-                    const dateA = new Date(a.date || 0);
-                    const dateB = new Date(b.date || 0);
-                    return dateB - dateA; // Descending order
-                });
-
-                render(allPages);
+                // Initial render (uses default sort option 'newest')
+                sortAndRender();
             } catch (error) {
                 document.getElementById('gallery').innerHTML = 
-                    `<div class="error">Failed to load database.<br>Please check GitHub Actions tab.</div>`;
+                    `<div class="loading" style="color: #ff7b72">Failed to load database. Check GitHub Actions.</div>`;
             }
+        }
+
+        function sortAndRender() {
+            const sortMode = document.getElementById('sortSelect').value;
+
+            // Sort the main array based on selection
+            allPages.sort((a, b) => {
+                const dateA = new Date(a.date || 0);
+                const dateB = new Date(b.date || 0);
+
+                if (sortMode === 'oldest') {
+                    return dateA - dateB; // Ascending Date
+                } else if (sortMode === 'az') {
+                    return a.name.localeCompare(b.name); // Alphabetical
+                } else {
+                    return dateB - dateA; // Default: Newest First (Descending)
+                }
+            });
+
+            // After sorting, re-apply search filter (which triggers render)
+            filterPages();
         }
 
         function render(items) {
@@ -137,20 +168,18 @@
             }
 
             items.forEach(item => {
-                // Clean up the filename for display
                 const displayName = item.name
                     .replace('.html', '')
                     .replace(/_/g, ' ')
                     .replace(/-/g, ' ');
                 
-                // Format Date (e.g., Dec 3, 2025)
                 const dateObj = new Date(item.date);
                 const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown';
 
                 const link = document.createElement('a');
                 link.className = 'card';
                 link.href = item.path;
-                link.target = "_blank"; // Open in new tab
+                link.target = "_blank";
                 
                 link.innerHTML = `
                     <div class="filename">${displayName}</div>
@@ -165,6 +194,7 @@
 
         function filterPages() {
             const query = document.getElementById('search').value.toLowerCase();
+            // Filter based on the ALREADY SORTED allPages array
             const filtered = allPages.filter(p => p.name.toLowerCase().includes(query));
             render(filtered);
         }

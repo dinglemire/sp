@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topaz AI 5.3.6 Config (7900 XTX)</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --accent: #d2a8ff; /* Purple for AI */
+            --code-bg: #000;
+            --text: #c9d1d9;
+            --success: #7ee787;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        h1 { border-bottom: 2px solid var(--border); padding-bottom: 10px; color: var(--accent); }
+        h2 { margin-top: 40px; color: #fff; border-left: 4px solid var(--accent); padding-left: 10px; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        /* Settings List */
+        .setting-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 8px 0; }
+        .setting-row:last-child { border-bottom: none; }
+        .val { color: var(--success); font-weight: bold; font-family: monospace; font-size: 1.1em; }
+
+        /* Code Blocks */
+        pre {
+            background: var(--code-bg);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            color: #a5d6ff;
+        }
+
+        .path {
+            background: #361704;
+            color: #ffb77d;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            display: inline-block;
+            margin-bottom: 10px;
+            border: 1px solid #6e320f;
+        }
+        
+        .warning {
+            background: rgba(210, 168, 255, 0.1);
+            border: 1px solid var(--accent);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🤖 Topaz Video AI 5.3.6 Configuration</h1>
+    <p>Optimized for <strong>AMD Radeon 7900 XTX</strong> | Target: 1080p Web Source &rarr; 4K Upscale</p>
+
+    <!-- SECTION 1: SYSTEM SETUP -->
+    <h2>1. ⚠️ System / Encoder Setup (First Run)</h2>
+    <div class="warning">
+        <strong>Mandatory on fresh Windows Install:</strong> Topaz hides the high-quality AMD AV1 flags by default. You must edit the JSON file below to unlock hardware encoding.
+    </div>
+
+    <p><strong>Step 1:</strong> Close Topaz Video AI.</p>
+    <p><strong>Step 2:</strong> Open this file in Notepad (Run as Administrator):</p>
+    <div class="path">C:\ProgramData\Topaz Labs LLC\Topaz Video AI\models\video-encoders.json</div>
+
+    <p><strong>Step 3:</strong> Paste this block at the top of the JSON list (inside the brackets):</p>
+    <pre>{
+    "id": "av1-win-amd",
+    "encoder": "AV1",
+    "allowsAlpha": 0,
+    "gpu": "amd",
+    "ffmpegOpts": "-c:v av1_amf -usage transcoding -quality quality -profile:v main -pix_fmt yuv420p",
+    "ext": [
+      "mkv",
+      "webm",
+      "mp4"
+    ],
+    "os": "windows",
+    "device": ".*",
+    "maxBitRate": 800,
+    "minSize": [1,1],
+    "maxSize": [16384,8704],
+    "maxBitDepth": 10
+}</pre>
+
+    <!-- SECTION 2: AI SETTINGS -->
+    <h2>2. 👁️ Proteus "Visual Fidelity" Profile</h2>
+    <p>Goal: Remove compression blocks without creating "Waxy" skin. Keep original framerate to avoid artifacts.</p>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>⚙️ Model Settings</h3>
+            <div class="setting-row"><span>AI Model</span> <span class="val">Proteus</span></div>
+            <div class="setting-row"><span>Mode</span> <span class="val">Dynamic</span></div>
+            <div class="setting-row"><span>Fix Compression</span> <span class="val">7</span></div>
+            <div class="setting-row"><span>Improve Detail</span> <span class="val">5</span></div>
+            <div class="setting-row"><span>Recover Detail</span> <span class="val">5</span></div>
+            <div class="setting-row"><span>Reduce Noise</span> <span class="val">5</span></div>
+            <div class="setting-row"><span>Sharpen</span> <span class="val">0</span></div>
+            <div class="setting-row"><span>Dehalo</span> <span class="val">3</span></div>
+            <div class="setting-row"><span>Anti-Alias</span> <span class="val">0</span></div>
+        </div>
+
+        <div class="card">
+            <h3>🎞️ Export Settings</h3>
+            <div class="setting-row"><span>Container</span> <span class="val">MKV</span></div>
+            <div class="setting-row"><span>Encoder</span> <span class="val">AV1 (AMD)</span></div>
+            <div class="setting-row"><span>Bitrate Mode</span> <span class="val">Constant</span></div>
+            <div class="setting-row"><span>Bitrate Amount</span> <span class="val">32 Mb/s</span></div>
+            <div class="setting-row"><span>Audio</span> <span class="val">Copy</span></div>
+            <div class="setting-row"><span>Output Res</span> <span class="val">3840x2160 (4K)</span></div>
+            <div class="setting-row"><span>Add Grain</span> <span class="val">ON (Amt: 1, Size: 2)</span></div>
+            <div class="setting-row"><span>Add noise</span> <span class="val">ON (Amt: 1)</span></div>
+        </div>
+    </div>
+
+    <h2>3. 📝 Notes</h2>
+    <ul>
+        <li><strong>Fix Compression (7):</strong> Going higher (15+) creates plastic skin. Keep at 7.</li>
+        <li><strong>Recover Detail (5):</strong> Going higher (20+) brings back pixelated blocks from the web source.</li>
+        <li><strong>Grain:</strong> Essential to stop AV1 from smoothing out skin texture at 32Mb/s.</li>
+        <li><strong>MKV Container:</strong> Required for best AV1 compatibility on PC.</li>
+        <li><strong>Dehalo:</strong>The Issue: Studio lighting creates harsh contrast between a brightly lit actor and a dark background. This often creates a white "halo" or outline around the body when upscaling.
+    Recommendation: If you see glowing outlines around people, set this to 5–10. If not, 0 is fine.</li>
+    </ul>
+
+</div>
+
+</body>
+</html>

@@ -1,13 +1,10 @@
 name: Update Page Index
 
 on:
-  # Keep this if you still want to run it manually sometimes
-  workflow_dispatch:
-  
-  # This makes it run automatically
+  workflow_dispatch: # Allows manual trigger
   push:
     paths:
-      - 'saved_pages/**.html'  # Only runs when HTML files in this folder change
+      - 'saved_pages/**.html' # Triggers only when HTML files in this folder change
 
 jobs:
   build:
@@ -16,21 +13,34 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # <--- IMPORTANT: Required to get file history/dates
 
       - name: Generate File List
         run: |
           echo "[" > pages.json
           first=true
-          # Find html files, sort them to keep order consistent
-          find saved_pages -name "*.html" -print0 | sort -z | while IFS= read -r -d '' file; do
+          
+          # Find all HTML files in saved_pages
+          find saved_pages -name "*.html" -print0 | while IFS= read -r -d '' file; do
             if [ "$first" = true ]; then
               first=false
             else
               echo "," >> pages.json
             fi
+            
             filename=$(basename "$file")
-            # Create JSON entry
-            echo "  { \"path\": \"$file\", \"name\": \"$filename\" }" >> pages.json
+            
+            # Get the last commit date for this file (Format: YYYY-MM-DD HH:MM:SS)
+            filedate=$(git log -1 --format="%ai" -- "$file")
+            
+            # If file is new and has no git history yet, use current time
+            if [ -z "$filedate" ]; then
+                filedate=$(date '+%Y-%m-%d %H:%M:%S')
+            fi
+
+            # Append to JSON: path, name, date
+            echo "  { \"path\": \"$file\", \"name\": \"$filename\", \"date\": \"$filedate\" }" >> pages.json
           done
           echo "]" >> pages.json
 
@@ -39,5 +49,5 @@ jobs:
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
           git add pages.json
-          # The commit message includes [skip ci] to be double-safe against loops
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update pages.json [skip ci]" && git push)
+          # Check for changes and commit. [skip ci] prevents infinite loops.
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update index with dates [skip ci]" && git push)

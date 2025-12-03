@@ -1,0 +1,108 @@
+:root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #238636;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --input-bg: #0d1117;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+    width: 100%;
+    max-width: 1000px;
+    text-align: center;
+}
+
+/* Controls Container */
+.controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+/* Inputs */
+#search, #sortSelect {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: white;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
+}
+
+#search { flex-grow: 1; min-width: 200px; }
+#sortSelect { width: 180px; cursor: pointer; }
+#search:focus, #sortSelect:focus { border-color: var(--accent); }
+
+/* Grid */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+}
+
+/* Card */
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.filename {
+    font-weight: 600;
+    font-size: 1.1em;
+    word-break: break-word;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.meta {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.date-badge {
+    background: #21262d;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.loading { margin-top: 50px; color: var(--text-dim); font-style: italic; }
+.error { color: #ff7b72; margin-top: 50px; text-align: center; }
